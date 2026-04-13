@@ -388,12 +388,17 @@ function saveViaJsonp(data) {
   return new Promise((resolve, reject) => {
     const cbName = 'saveCallback_' + Date.now();
     const script = document.createElement('script');
-    const params = new URLSearchParams({ callback: cbName, action: 'save', data: JSON.stringify(data), t: Date.now() });
+    const params = new URLSearchParams({
+      callback: cbName,
+      action: 'save',
+      data: JSON.stringify(data),
+      t: Date.now()
+    });
     const timeout = setTimeout(() => {
       delete window[cbName];
       if (document.body.contains(script)) document.body.removeChild(script);
-      resolve('saved');
-    }, 6000);
+      reject(new Error('timeout'));
+    }, 10000);
     window[cbName] = function(result) {
       clearTimeout(timeout);
       delete window[cbName];
@@ -401,7 +406,12 @@ function saveViaJsonp(data) {
       resolve(result);
     };
     script.src = SHEET_URL + '?' + params.toString();
-    script.onerror = () => { clearTimeout(timeout); resolve('saved'); };
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (document.body.contains(script)) document.body.removeChild(script);
+      reject(new Error('script error'));
+    };
     document.body.appendChild(script);
   });
 }
@@ -421,22 +431,20 @@ async function saveLog(lk, weekNum, phase) {
   };
   btn.disabled = true;
   btn.textContent = 'Saving...';
+  msg.className = 'smsg';
+  msg.textContent = '';
   try {
-    await fetch(SHEET_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    await saveViaJsonp(data);
     sd[lk] = data;
     btn.textContent = 'Save to Google Sheets';
     btn.disabled = false;
-    msg.textContent = 'Saved';
+    msg.textContent = 'Saved to sheet';
     msg.className = 'smsg show';
     setTimeout(() => msg.classList.remove('show'), 3000);
   } catch(e) {
     btn.textContent = 'Save to Google Sheets';
     btn.disabled = false;
-    msg.textContent = 'Error saving';
+    msg.textContent = 'Error saving — check connection';
     msg.className = 'smsg show err';
     setTimeout(() => msg.classList.remove('show'), 4000);
   }
