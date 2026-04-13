@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edward's 12-Week Pickleball Training Tracker</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f9f7;color:#1a1a1a;padding:1.5rem;}
+  h1{font-size:20px;font-weight:500;margin-bottom:4px;color:#1a1a1a;}
+  .subtitle{font-size:13px;color:#888;margin-bottom:1.5rem;}
+  .sync-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#888;margin-bottom:1.25rem;padding:8px 12px;background:#fff;border:0.5px solid #e0e0dc;border-radius:8px;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
+  .sync-dot.ok{background:#1D9E75;}
+  .sync-dot.err{background:#E24B4A;}
+  .sync-dot.loading{background:#EF9F27;animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .top-tabs{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .ttab{padding:6px 14px;border-radius:20px;border:0.5px solid #ccc;font-size:13px;background:transparent;color:#666;cursor:pointer;transition:all 0.15s;}
+  .ttab.active{font-weight:500;color:#1a1a1a;border-color:#999;background:#f0f0ee;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:1rem;}
+  .day-cell{border-radius:8px;border:0.5px solid #e0e0dc;padding:7px 5px;min-height:100px;background:#fff;}
+  .day-name{font-size:10px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
+  .db{font-size:10px;font-weight:500;padding:2px 5px;border-radius:3px;margin-bottom:2px;line-height:1.3;}
+  .db-pickle{background:#E1F5EE;color:#085041;}
+  .db-gym-a{background:#EEEDFE;color:#3C3489;}
+  .db-gym-b{background:#E6F1FB;color:#0C447C;}
+  .db-mob{background:#FAEEDA;color:#633806;}
+  .db-drill{background:#EAF3DE;color:#27500A;}
+  .db-z2{background:#FBEAF0;color:#72243E;}
+  .db-free{background:#F1EFE8;color:#444441;}
+  .db-opt{opacity:0.55;}
+  .day-sub{font-size:9px;color:#aaa;margin-top:2px;}
+  .phase-nav{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;}
+  .pnav{padding:6px 14px;border-radius:20px;border:0.5px solid #ccc;font-size:13px;background:transparent;color:#666;cursor:pointer;}
+  .pnav.active{font-weight:500;color:#1a1a1a;border-color:#999;background:#f0f0ee;}
+  .phase-blk{display:none;}
+  .phase-blk.active{display:block;}
+  .ph{padding:11px 15px;border-radius:8px;margin-bottom:1rem;border:0.5px solid transparent;}
+  .ph1{background:#EEEDFE;border-color:#AFA9EC;}.ph1 .pht{color:#3C3489;}.ph1 .phs{color:#534AB7;}
+  .ph2{background:#E1F5EE;border-color:#5DCAA5;}.ph2 .pht{color:#085041;}.ph2 .phs{color:#0F6E56;}
+  .ph3{background:#E6F1FB;border-color:#85B7EB;}.ph3 .pht{color:#0C447C;}.ph3 .phs{color:#185FA5;}
+  .phd{background:#F1EFE8;border-color:#B4B2A9;}.phd .pht{color:#444441;}.phd .phs{color:#5F5E5A;}
+  .pht{font-size:14px;font-weight:500;}.phs{font-size:12px;margin-top:3px;}
+  .wcard{background:#fff;border:0.5px solid #e0e0dc;border-radius:12px;padding:13px 15px;margin-bottom:10px;}
+  .wtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .wlabel{font-size:15px;font-weight:500;color:#1a1a1a;}
+  .wbadge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;}
+  .bp1{background:#EEEDFE;color:#3C3489;}.bp2{background:#E1F5EE;color:#085041;}
+  .bp3{background:#E6F1FB;color:#0C447C;}.bdl{background:#F1EFE8;color:#444441;}
+  .srow{display:grid;grid-template-columns:86px 1fr;gap:8px;margin-bottom:8px;align-items:start;}
+  .srow:last-child{margin-bottom:0;}
+  .stag{font-size:11px;font-weight:500;padding:3px 7px;border-radius:4px;text-align:center;white-space:nowrap;line-height:1.4;}
+  .ta{background:#EEEDFE;color:#3C3489;}.tb{background:#E6F1FB;color:#0C447C;}
+  .tmob{background:#FAEEDA;color:#633806;}.tz2{background:#FBEAF0;color:#72243E;}
+  .tagil{background:#EAF3DE;color:#27500A;}.tment{background:#F5C4B3;color:#712B13;}
+  .sdet{font-size:13px;color:#1a1a1a;}.snote{font-size:12px;color:#666;margin-top:2px;}
+  .div{height:0.5px;background:#e8e8e4;margin:9px 0;}
+  .swap-row{font-size:12px;color:#666;padding:4px 0;}
+  .swap-lbl{font-weight:500;color:#1a1a1a;}
+  .tgl{font-size:12px;color:#aaa;cursor:pointer;border:none;background:none;padding:4px 0;text-decoration:underline;text-underline-offset:2px;}
+  .tgl:hover{color:#666;}
+  .log-inner{display:none;margin-top:8px;}
+  .log-inner.open{display:block;}
+  .ltitle{font-size:11px;font-weight:500;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;}
+  .lfields{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .lf{display:flex;flex-direction:column;gap:3px;}
+  .lf label{font-size:11px;color:#aaa;}
+  .lf input{font-size:13px;padding:5px 8px;border-radius:8px;border:0.5px solid #ccc;background:#f9f9f7;color:#1a1a1a;width:100%;}
+  .lf input:focus{outline:none;border-color:#999;}
+  .lnotes{margin-top:6px;}
+  .lnotes textarea{width:100%;font-size:13px;padding:6px 8px;border-radius:8px;border:0.5px solid #ccc;background:#f9f9f7;color:#1a1a1a;resize:vertical;min-height:44px;font-family:inherit;}
+  .lnotes textarea:focus{outline:none;border-color:#999;}
+  .sbtn{margin-top:7px;padding:6px 14px;font-size:12px;border-radius:8px;border:0.5px solid #ccc;background:transparent;color:#666;cursor:pointer;}
+  .sbtn:hover{background:#f0f0ee;}
+  .sbtn:disabled{opacity:0.5;cursor:not-allowed;}
+  .smsg{font-size:11px;color:#aaa;margin-left:8px;opacity:0;transition:opacity 0.3s;}
+  .smsg.show{opacity:1;}
+  .smsg.err{color:#E24B4A;}
+  .ref-card{background:#fff;border:0.5px solid #e0e0dc;border-radius:12px;padding:13px 15px;margin-bottom:10px;}
+  .ref-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:10px;}
+  .ref-row{display:grid;grid-template-columns:86px 1fr;gap:8px;margin-bottom:7px;align-items:start;}
+  .leg{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:0.5px solid #e8e8e4;}
+  .li{display:flex;align-items:center;gap:5px;font-size:11px;color:#666;}
+  .ld{width:9px;height:9px;border-radius:2px;}
+  @media(max-width:600px){.week-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.lfields{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<h1>Edward's 12-Week Pickleball Training Tracker</h1>
+<p class="subtitle">Final version · Strength + Agility + Zone 2 + Shoulder Prehab + Mental Performance</p>
+
+<div class="sync-bar">
+  <div class="sync-dot loading" id="sync-dot"></div>
+  <span id="sync-msg">Connecting to Google Sheets...</span>
+</div>
+
+<div class="top-tabs">
+  <button class="ttab active" onclick="showView('schedule',this)">Weekly schedule</button>
+  <button class="ttab" onclick="showView('tracker',this)">12-week tracker</button>
+  <button class="ttab" onclick="showView('mobility',this)">Sunday mobility</button>
+  <button class="ttab" onclick="showView('reference',this)">Reference guide</button>
+</div>
+
+<div id="view-schedule" class="view active">
+  <div class="week-grid">
+    <div class="day-cell"><div class="day-name">Mon</div><div class="db db-pickle">Pickleball</div></div>
+    <div class="day-cell"><div class="day-name">Tue</div><div class="db db-gym-b">Day B — gym</div><div class="db db-pickle">Pickleball</div><div class="day-sub">gym first · prehab warm-up</div></div>
+    <div class="day-cell"><div class="day-name">Wed</div><div class="db db-drill db-opt">Drill opt</div><div class="db db-drill db-opt" style="font-size:9px;">+ agility drills before</div></div>
+    <div class="day-cell"><div class="day-name">Thu</div><div class="db db-gym-a">Day A — gym</div><div class="day-sub">legs + power</div></div>
+    <div class="day-cell"><div class="day-name">Fri</div><div class="db db-free">Free</div><div class="day-sub">quality time</div></div>
+    <div class="day-cell"><div class="day-name">Sat</div><div class="db db-z2">Zone 2 run</div><div class="db db-drill db-opt">Drill opt</div><div class="day-sub">Z2 first · 30–40 min</div></div>
+    <div class="day-cell"><div class="day-name">Sun</div><div class="db db-mob">Mobility</div><div class="db db-mob" style="font-size:9px;">+ visualization</div><div class="day-sub">at home · 30 min</div></div>
+  </div>
+  <div class="leg">
+    <div class="li"><div class="ld" style="background:#1D9E75;"></div>Pickleball</div>
+    <div class="li"><div class="ld" style="background:#7F77DD;"></div>Day A — legs + power</div>
+    <div class="li"><div class="ld" style="background:#378ADD;"></div>Day B — upper + core</div>
+    <div class="li"><div class="ld" style="background:#639922;"></div>Drill + agility</div>
+    <div class="li"><div class="ld" style="background:#D4537E;"></div>Zone 2</div>
+    <div class="li"><div class="ld" style="background:#BA7517;"></div>Mobility + mental</div>
+    <div class="li"><div class="ld" style="background:#888780;"></div>Free</div>
+  </div>
+</div>
+
+<div id="view-tracker" class="view">
+  <div class="phase-nav">
+    <button class="pnav active" onclick="showPhase('p1',this)">Phase 1 — Wks 1–4</button>
+    <button class="pnav" onclick="showPhase('p2',this)">Phase 2 — Wks 5–8</button>
+    <button class="pnav" onclick="showPhase('p3',this)">Phase 3 — Wks 9–12</button>
+    <button class="pnav" onclick="showPhase('dl',this)">Deload — Wk 13</button>
+  </div>
+  <div id="phase-p1" class="phase-blk active"><div class="ph ph1"><div class="pht">Phase 1 — Build the base</div><div class="phs">RPE 7–8 · Establish weights · Build all four new habits from day one</div></div><div id="weeks-p1"></div></div>
+  <div id="phase-p2" class="phase-blk"><div class="ph ph2"><div class="pht">Phase 2 — Overload</div><div class="phs">RPE 8–9 · Add load every 1–2 weeks · Increase agility complexity · Push Zone 2 duration</div></div><div id="weeks-p2"></div></div>
+  <div id="phase-p3" class="phase-blk"><div class="ph ph3"><div class="pht">Phase 3 — Peak + refine</div><div class="phs">RPE 9–10 · Heavy low-rep strength · Advanced reactive agility · Full mental routine</div></div><div id="weeks-p3"></div></div>
+  <div id="phase-dl" class="phase-blk"><div class="ph phd"><div class="pht">Deload — Week 13</div><div class="phs">50–60% intensity · Same structure · Let 12 weeks of work absorb</div></div><div id="weeks-dl"></div></div>
+</div>
+
+<div id="view-mobility" class="view">
+  <div class="ref-card">
+    <div class="ref-title">Sunday home session — 30 min total</div>
+    <div class="ref-row"><div class="stag tmob">1 · 3 min</div><div><div class="sdet">World's greatest stretch</div><div class="snote">5 reps each side. Hip flexor, thoracic, shoulder all in one flow.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">2 · 3 min</div><div><div class="sdet">90/90 hip stretch</div><div class="snote">60s each side. Internal + external hip rotation — reduces lateral load stress.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">3 · 3 min</div><div><div class="sdet">Pigeon pose or figure-4</div><div class="snote">60s each side. Deep glute and hip — directly offloads lower back from court play.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">4 · 2 min</div><div><div class="sdet">Half-kneeling hip flexor stretch with overhead reach</div><div class="snote">60s each side. Counters hip flexor tightness from court stance and sitting.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">5 · 2 min</div><div><div class="sdet">Child's pose to thread-the-needle</div><div class="snote">45s each side. Thoracic rotation — decompresses spine after a week of swinging.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">6 · 2 min</div><div><div class="sdet">Supine spinal twist</div><div class="snote">60s each side. Lower back and thoracic decompression.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">7 · 2 min</div><div><div class="sdet">Wall ankle mobility drill</div><div class="snote">10 reps each side. Dorsiflexion — affects lunge depth and court footwork.</div></div></div>
+    <div class="ref-row"><div class="stag tmob">8 · 2 min</div><div><div class="sdet">Standing quad + couch stretch</div><div class="snote">45s each side. Quad and hip flexor lengthening.</div></div></div>
+    <div class="div"></div>
+    <div class="ref-row"><div class="stag tment">9 · 5 min</div><div><div class="sdet">Box breathing (4-4-4-4)</div><div class="snote">Inhale 4s · Hold 4s · Exhale 4s · Hold 4s. Lying flat. Activates parasympathetic recovery.</div></div></div>
+    <div class="ref-row"><div class="stag tment">10 · 5 min</div><div><div class="sdet">Match visualization</div><div class="snote">Eyes closed. Replay a recent point sequence — your movement, your resets, your shot selection. Then visualize executing perfectly in a tough scenario.</div></div></div>
+    <div class="div"></div>
+    <div style="font-size:12px;color:#aaa;">Phase progression: extend holds to 75s (P2), 90s (P3). Visualization — P1: movement patterns · P2: match scenarios · P3: pressure situations</div>
+  </div>
+</div>
+
+<div id="view-reference" class="view">
+  <div class="ref-card">
+    <div class="ref-title">Shoulder prehab warm-up — Day B (5 min before lifting)</div>
+    <div class="ref-row"><div class="stag tb">1</div><div><div class="sdet">Band pull-aparts — 2×20</div><div class="snote">Rear delt and rotator cuff activation. Critical before any pressing.</div></div></div>
+    <div class="ref-row"><div class="stag tb">2</div><div><div class="sdet">Band external rotation — 2×15 each side</div><div class="snote">Anchor band at elbow height, rotate outward. Best rotator cuff prehab for racket sport athletes.</div></div></div>
+    <div class="ref-row"><div class="stag tb">3</div><div><div class="sdet">Wrist flexor + extensor curls — 2×15 each</div><div class="snote">Light dumbbell. Prevents forearm tendinopathy from repetitive pickleball swing load.</div></div></div>
+    <div class="ref-row"><div class="stag tb">4</div><div><div class="sdet">Arm circles — 10 forward + 10 backward</div><div class="snote">Full shoulder capsule warm-up to close out prehab.</div></div></div>
+  </div>
+  <div class="ref-card">
+    <div class="ref-title">Agility drills — Wednesday/Saturday (8–10 min before drilling)</div>
+    <div class="ref-row"><div class="stag tagil">Phase 1</div><div><div class="sdet">Lateral shuffle cone drill + agility ladder in/out steps</div><div class="snote">4 cones 10 ft apart. Shuffle touch each cone × 5 sets. Then 2 ladder lengths of in/out. Low stance, quick plant.</div></div></div>
+    <div class="ref-row"><div class="stag tagil">Phase 2</div><div><div class="sdet">T-drill + ladder crossover steps</div><div class="snote">Sprint forward, shuffle left, shuffle right, backpedal. 4–5 reps, 90s rest. Adds forward/backward transitions.</div></div></div>
+    <div class="ref-row"><div class="stag tagil">Phase 3</div><div><div class="sdet">Reactive partner drill + full T-drill circuit</div><div class="snote">Partner points left/right/forward at random — react instantly for 20s × 5 sets. Decision speed under pressure.</div></div></div>
+  </div>
+  <div class="ref-card">
+    <div class="ref-title">Zone 2 — Saturday (30–40 min, before drilling)</div>
+    <div class="ref-row"><div class="stag tz2">Target</div><div><div class="sdet">Conversational pace — you can speak full sentences</div><div class="snote">Heart rate ~60–70% max, roughly 130–150 bpm. If you can't talk, slow down.</div></div></div>
+    <div class="ref-row"><div class="stag tz2">Phase 1</div><div><div class="sdet">30 min easy jog or brisk walk</div><div class="snote">Build the aerobic base without adding fatigue to your week.</div></div></div>
+    <div class="ref-row"><div class="stag tz2">Phase 2</div><div><div class="sdet">35 min — increase to light jog throughout</div><div class="snote">Should still feel easy. If it doesn't, you're going too hard.</div></div></div>
+    <div class="ref-row"><div class="stag tz2">Phase 3</div><div><div class="sdet">40 min — sustained jog at consistent pace</div><div class="snote">Your recovery between points comes from this. Don't skip it in peak phase.</div></div></div>
+  </div>
+  <div class="ref-card">
+    <div class="ref-title">Exercise swaps by phase</div>
+    <div class="ref-row"><div class="stag bp2">Wk 7</div><div><div class="sdet">Box jump → Broad jump</div><div class="snote">Horizontal push-off power — more court-specific than vertical.</div></div></div>
+    <div class="ref-row"><div class="stag bp3">Wk 9</div><div><div class="sdet">Lateral lunge → Bulgarian split squat</div><div class="snote">Heavier unilateral load for peak strength phase.</div></div></div>
+    <div class="ref-row"><div class="stag bp3">Wk 9</div><div><div class="sdet">Farmer carry → Suitcase carry</div><div class="snote">One arm only — harder anti-lateral core demand.</div></div></div>
+    <div class="ref-row"><div class="stag bp3">Wk 9</div><div><div class="sdet">Dead bug → Ab wheel rollout</div><div class="snote">Higher core challenge for peak phase.</div></div></div>
+    <div class="ref-row"><div class="stag bp3">Wk 11</div><div><div class="sdet">Ab wheel → Copenhagen plank</div><div class="snote">Adductor + lateral stability — directly pickleball-specific.</div></div></div>
+  </div>
+</div>
+
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwKuYapQlwdQizoDy3icBVIqiyadPvcqvXQ1MLP1hnJ8Ki5s9o5wg46qMr8vuJI-FxETg/exec';
+const sd = {};
+
+const weeks=[
+  {w:1,ph:'p1',b:'bp1',bl:'Phase 1',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab warm-up 5 min → Cable chop 3×12 · SA row 3×10 · Landmine press 3×10 · Farmer carry 3×30m · Dead bug 3×10 · Finisher: KB swing + lateral shuffle 2 rounds 40s/20s',n:'Prehab first every single week — non-negotiable. Trim finisher to 2 rounds on Tuesdays; pickleball is your third round.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 @~70% · Lateral lunge 3×10 · Box jump 3×5 · Pallof press 3×12 · SL RDL 3×8',n:'Find working weights. Move well before moving heavy. RPE 7 max this week.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'30 min easy jog or brisk walk before drilling',n:'Conversational pace only. Build the aerobic base without fatiguing the week.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Lateral shuffle cones + agility ladder in/out — 5 sets each · 8 min before drilling',n:'Low stance, quick plant, stay on the balls of your feet. This is a skill, not just fitness.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full 9-station flow · 60s holds · Box breathing 5 min · Visualization 5 min — replay recent movement patterns',n:'Start simple with visualization. Just replay how you moved in Monday\'s session.'}
+  ],swaps:null,lk:'w1'},
+  {w:2,ph:'p1',b:'bp1',bl:'Phase 1',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×12 · SA row 3×10 · Landmine press 3×10 · Farmer carry 3×30m · Dead bug 3×10 · Finisher: 2 rounds 40s/20s',n:'Increase chop cable weight slightly if week 1 felt clean and controlled.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 · Lateral lunge 3×10 · Box jump 3×5 · Pallof press 3×12 · SL RDL 3×8',n:'Same weights as week 1. Focus on bar speed off the floor and hip hinge depth.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'30 min easy jog',n:'If it felt genuinely easy last week, add a slight incline — but only if you can still hold a conversation.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Lateral shuffle cones + agility ladder in/out — 5 sets · 8 min',n:'Push the shuffle speed this week. Compete with your time from week 1.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 60s holds · Breathwork 5 min · Visualization: focus on your split step timing and first movement',n:'Visualize a specific moment — the moment you read the ball and push off. Make it vivid.'}
+  ],swaps:null,lk:'w2'},
+  {w:3,ph:'p1',b:'bp1',bl:'Phase 1',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×12 · SA row 3×10 +5 lbs · Landmine press 3×10 · Farmer carry 3×30m +5 lbs · Dead bug 3×12 · Finisher: 2 rounds 40s/20s',n:'First load increases. Add to row and carry only if movement quality was solid weeks 1–2.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 +5–10 lbs · Lateral lunge 3×12 · Box jump 3×5 · Pallof press 3×12 · SL RDL 3×8',n:'First DL load increase. Only go up if RPE was under 8 last week.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'30 min easy jog',n:'Hold the same duration. Consistency over the full 4 weeks matters more than pushing here.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Lateral shuffle cones + ladder in/out — 6 sets · 8 min',n:'Add one extra set. Start noticing which direction your plant foot is weakest.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 60–75s holds · Breathwork 5 min · Visualization: your defensive reset sequence — staying low, absorbing pace',n:'Extend hip and thoracic holds if 60s felt easy last week.'}
+  ],swaps:null,lk:'w3'},
+  {w:4,ph:'p1',b:'bp1',bl:'Phase 1',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×15 · SA row 3×12 · Landmine press 3×12 · Farmer carry 3×30m · Dead bug 3×12 · Finisher: 2 rounds 40s/20s',n:'Higher reps to flush fatigue. No new load this week — consolidate Phase 1.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 (hold load) · Lateral lunge 3×12 · Box jump 3×5 · Pallof press 3×15 · SL RDL 3×10',n:'Consolidation week. Don\'t add load — push rep quality and depth instead.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'30 min easy jog',n:'Assessment week. Note what feels different aerobically vs week 1. You should feel more comfortable.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Lateral shuffle cones + ladder in/out — 6 sets · 8 min',n:'Same drill, same sets. Focus on landing mechanics and low center of gravity.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 75s holds · Breathwork 5 min · Visualization: full point sequence from serve to reset to put-away',n:'Try visualizing a complete 4–5 shot rally with perfect decision-making.'}
+  ],swaps:null,lk:'w4'},
+  {w:5,ph:'p2',b:'bp2',bl:'Phase 2',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×12 heavier · SA row 4×10 · Landmine press 3×10 · Farmer carry 3×30m +10 lbs · Dead bug 3×10 · Finisher: 3 rounds 40s/20s',n:'Phase 2 starts. Add a round to finisher — body is now adapted to the movement patterns.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 +10 lbs from P1 end · Lateral lunge 3×10 · Box jump 3×5 max effort · Pallof press 3×12 · SL RDL 4×8',n:'Phase 2 loads heavier. Add a set to SL RDL — unilateral strength is your on-court gap closer.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'35 min easy jog',n:'Add 5 minutes. Consistent pace. You should be able to have a full conversation throughout.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'T-drill 4 reps + ladder crossover steps — 3 sets · 10 min',n:'Step up to T-drill this phase. Sprint forward, shuffle left, shuffle right, backpedal. 90s rest between reps.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 75s holds · Breathwork 5 min · Visualization: match scenario — you\'re down 5–9, visualize your reset and run',n:'Pressure scenario visualization starts here. Make it uncomfortable, then execute perfectly in your mind.'}
+  ],swaps:null,lk:'w5'},
+  {w:6,ph:'p2',b:'bp2',bl:'Phase 2',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×12 · SA row 4×10 +5 lbs · Landmine press 3×10 +2.5 lbs · Farmer carry 3×30m · Dead bug 3×12 · Finisher: 3 rounds 40s/15s',n:'Reduce finisher rest to 15s. Higher metabolic demand — mirrors a tough rally exchange.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 +5 lbs · Lateral lunge 3×12 · Box jump 3×5 · Pallof press 3×12 · SL RDL 4×8',n:'Steady load climb. Watch lateral lunge depth — don\'t let load compromise your range.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'35 min easy jog',n:'Hold 35 min. If Saturday has a drill after, keep Z2 genuinely easy.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'T-drill 5 reps + ladder crossover steps — 4 sets · 10 min',n:'Add a T-drill rep and a ladder set. Rest still 90s — quickness comes from quality, not volume.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 75s holds · Breathwork 5 min · Visualization: opponent hits a hard drive at your body — visualize the block and transition',n:'Specific shot scenario. See the ball, feel the block, see yourself resetting position.'}
+  ],swaps:null,lk:'w6'},
+  {w:7,ph:'p2',b:'bp2',bl:'Phase 2',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 4×12 · SA row 4×10 · Landmine press 4×10 · Farmer carry 3×30m +5 lbs · Dead bug 3×12 · Finisher: 3 rounds 40s/15s',n:'Volume peak for Day B. Add a set to chop and press. Hardest upper session of Phase 2.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 +5 lbs · Lateral lunge 4×10 · Broad jump 3×5 (swap) · Pallof press 3×15 · SL RDL 4×8 +5 lbs',n:'Swap box jump for broad jump — horizontal push-off power more specific to court movement.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'35 min easy jog',n:'Same duration. By now it should feel comfortable. That\'s the aerobic base building.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'T-drill 5 reps + ladder crossover — 4 sets + reactive shadowing 3×20s · 10 min',n:'Add reactive shadowing: face a wall, pick a direction randomly and shuffle to it on impulse.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 75–90s holds · Breathwork 5 min · Visualization: doubles scenario — partner communication, positioning, poaching decision',n:'Expand visualization to include your partner. Mental reps include your doubles positioning.'}
+  ],swaps:['Box jump → Broad jump (horizontal push-off power, more court-specific)'],lk:'w7'},
+  {w:8,ph:'p2',b:'bp2',bl:'Phase 2',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×12 · SA row 3×10 · Landmine press 3×10 · Farmer carry 3×30m · Dead bug 3×10 · Finisher: 2 rounds 40s/20s',n:'Slight volume drop. Consolidation before Phase 3. Let the body absorb 7 weeks.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×5 (hold load) · Lateral lunge 4×10 · Broad jump 3×5 · Pallof press 3×12 · SL RDL 4×8',n:'Hold all loads. Prep week for Phase 3 — recover, don\'t stagnate.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'30 min easy jog — step back down',n:'Shorter this week intentionally. Full recovery before Phase 3 increases.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Back to basics — lateral shuffle cones + ladder in/out · 5 sets · 8 min',n:'Drill the basics at high quality rather than pushing complexity this week.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 90s holds · Extended breathwork 8 min · Visualization: replay a recent win — how you felt, what worked',n:'Positive mental rep. Anchoring confidence before the hardest phase.'}
+  ],swaps:null,lk:'w8'},
+  {w:9,ph:'p3',b:'bp3',bl:'Phase 3',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×10 heavy · SA row 4×8 heavy · Landmine press 3×8 heavy · Suitcase carry 3×30m (swap) · Ab wheel rollout 3×10 (swap) · Finisher: 3 rounds 40s/15s',n:'Two accessory swaps. Suitcase carry and ab wheel raise anti-lateral and core demand significantly.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×3 near-max · Bulgarian split squat 3×8 (swap) · Broad jump 4×5 · Pallof press 3×12 · SL RDL 3×6 heavy',n:'Lower reps, higher load. BSS replaces lateral lunge — heavier unilateral demand for peak block.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'40 min easy jog',n:'Longest Zone 2 of the program. Don\'t let Phase 3 intensity bleed into this — stay conversational.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Full reactive partner drill 5×20s + T-drill 5 reps · 10 min',n:'Phase 3 agility is reactive. Partner-driven random direction cues. Decision speed under fatigue.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 90s holds · Breathwork 5 min · Visualization: high-pressure match point — you\'re serving at 10–10, see every detail',n:'Highest-pressure mental scenario of the program. See the serve, the return, your movement, the winning shot.'}
+  ],swaps:['Lateral lunge → Bulgarian split squat (heavier unilateral load)','Farmer carry → Suitcase carry (one arm, harder anti-lateral core)','Dead bug → Ab wheel rollout (higher core demand)'],lk:'w9'},
+  {w:10,ph:'p3',b:'bp3',bl:'Phase 3',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×10 +weight · SA row 4×8 +5 lbs · Landmine press 3×8 +2.5 lbs · Suitcase carry 3×30m +5 lbs · Ab wheel 3×12 · Finisher: 3 rounds 40s/15s',n:'Peak upper session. Increase load across every movement. 9 weeks of prep built you for this.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 4×3 +5–10 lbs · Bulgarian split squat 3×8 +5 lbs · Broad jump 4×5 · Pallof press 3×12 · SL RDL 3×6 +5 lbs',n:'Push the heavy sets. These are the biggest strength gains of the cycle.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'40 min easy jog',n:'Hold 40 min. Your aerobic recovery between points should feel noticeably better than week 1.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Reactive partner drill 5×20s + T-drill 5 reps + ladder crossover 3 sets · 10 min',n:'Full agility circuit. All three drills back to back. Keep rest at 90s between T-drill reps.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 90s holds · Breathwork 5 min · Visualization: playing against a stronger opponent — staying composed, executing your game plan',n:'Adversarial visualization. See yourself staying calm, resetting, and executing under pressure.'}
+  ],swaps:null,lk:'w10'},
+  {w:11,ph:'p3',b:'bp3',bl:'Phase 3',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×10 · SA row 5×6 heavy · Landmine press 3×8 · Suitcase carry 3×30m · Copenhagen plank 3×20s (swap) · Finisher: 3 rounds 40s/15s',n:'Copenhagen plank replaces ab wheel — adductor and lateral stability, directly pickleball-specific.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 5×3 @ max working weight · Bulgarian split squat 3×8 · Broad jump 4×5 · Pallof press 3×12 · SL RDL 3×6',n:'5th set on DL. Peak lower body volume at heavy load. Court performance should feel more explosive by now.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'40 min easy jog',n:'Final full Zone 2 before deload. Protect it — don\'t push the pace.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Full reactive circuit — 6×20s reactive + T-drill 5 reps · 10 min',n:'Add a reactive set. Peak agility week. Focus on first-step quickness and decisive direction change.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 90s holds · Breathwork 5 min · Visualization: your best match ever — how you moved, how you competed, how you felt',n:'Peak confidence visualization. Anchor that feeling. This is the mental state you want in competition.'}
+  ],swaps:['Ab wheel → Copenhagen plank (adductor + lateral stability — pickleball-specific)'],lk:'w11'},
+  {w:12,ph:'p3',b:'bp3',bl:'Phase 3',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 3×8 · SA row 3×6 max · Landmine press 3×6 max · Suitcase carry 3×30m · Copenhagen plank 3×20s · Finisher: 2 rounds 40s/15s',n:'Peak week. Lowest reps, highest load of the program. Volume drops, intensity stays max.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 3×3 @ max · Bulgarian split squat 3×6 · Broad jump 3×5 · Pallof press 3×12 · SL RDL 3×5',n:'Strength peak. Three heavy sets, full rest between. Max expression of 12 weeks of work.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'30 min easy jog — begin stepping down',n:'Shorter. Begin transitioning to deload. Keep it genuinely easy.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Reactive drill 4×20s + T-drill 4 reps · 8 min — begin step down',n:'Slightly reduced. Sharp and quality over volume. No grinding.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 90s holds · Extended breathwork 8 min · Visualization: full match playthrough with composure from start to finish',n:'Most complete mental rep of the program. Warm-up mindset, match composure, point execution.'}
+  ],swaps:null,lk:'w12'},
+  {w:13,ph:'dl',b:'bdl',bl:'Deload',s:[
+    {tag:'Day B — Tue',tc:'tb',d:'Prehab 5 min → Cable chop 2×10 light · SA row 2×10 light · Landmine press 2×10 light · Farmer carry 2×20m · Finisher: 2 rounds easy pace',n:'Same movements, half the weight. If anything feels heavy, go lighter. No grinding.'},
+    {tag:'Day A — Thu',tc:'ta',d:'Trap bar DL 3×5 @ 60% · Bulgarian split squat 2×8 light · Box jump 2×5 easy · Pallof press 2×10',n:'Active recovery only. The gains happen during deload, not despite it.'},
+    {tag:'Zone 2 — Sat',tc:'tz2',d:'25 min easy walk or very light jog',n:'Minimum effective dose. Move the body, flush the legs, protect the recovery.'},
+    {tag:'Agility — Wed/Sat',tc:'tagil',d:'Ladder in/out only — 3 sets easy · 5 min',n:'Keep the movement pattern active without any intensity. No sprinting.'},
+    {tag:'Mobility — Sun',tc:'tmob',d:'Full flow · 90s holds · Breathwork 10 min · Visualization: what you want to achieve in the next 12-week cycle',n:'Future-focused visualization. Where do you want your game to be? Set the intention for cycle 2.'}
+  ],swaps:null,lk:'w13'}
+];
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('sync-dot');
+  const text = document.getElementById('sync-msg');
+  dot.className = 'sync-dot ' + state;
+  text.textContent = msg;
+}
+
+async function loadFromSheets() {
+  try {
+    const res = await fetch(SHEET_URL);
+    const rows = await res.json();
+    // rows[0] is headers, rows[1+] are data
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[0]) continue;
+      const key = 'w' + r[0];
+      sd[key] = { b: r[2]||'', a: r[3]||'', z2: r[4]||'', ag: r[5]||'', rpe: r[6]||'', court: r[7]||'', notes: r[8]||'' };
+    }
+    setSyncStatus('ok', 'Connected to Google Sheets — logs loaded');
+  } catch(e) {
+    setSyncStatus('err', 'Could not connect to Google Sheets — logs will not persist');
+  }
+}
+
+function populateFields(lk) {
+  const saved = sd[lk];
+  if (!saved) return;
+  const fields = ['b','a','z2','ag','rpe','court','notes'];
+  fields.forEach(f => {
+    const el = document.getElementById(lk + '-' + f);
+    if (el && saved[f]) el.value = saved[f];
+  });
+}
+
+function renderWeeks(ph) {
+  const c = document.getElementById('weeks-' + ph);
+  if (!c) return;
+  c.innerHTML = '';
+  weeks.filter(w => w.ph === ph).forEach(w => {
+    let sh = w.s.map(s => `<div class="srow"><div class="stag ${s.tc}">${s.tag}</div><div><div class="sdet">${s.d}</div><div class="snote">${s.n}</div></div></div>`).join('');
+    let swH = w.swaps ? '<div class="div"></div>' + w.swaps.map(s => `<div class="swap-row"><span class="swap-lbl">Swap — </span>${s}</div>`).join('') : '';
+    const d = document.createElement('div');
+    d.className = 'wcard';
+    d.innerHTML = `
+      <div class="wtop"><div class="wlabel">Week ${w.w}</div><div class="wbadge ${w.b}">${w.bl}</div></div>
+      ${sh}${swH}
+      <div class="div"></div>
+      <button class="tgl" onclick="toggleLog('log-${w.lk}',this)">+ log this week</button>
+      <div class="log-inner" id="log-${w.lk}">
+        <div class="ltitle">Session log</div>
+        <div class="lfields">
+          <div class="lf"><label>Day B key lift (weight × reps)</label><input type="text" id="${w.lk}-b" placeholder="e.g. cable chop 40lb × 12"></div>
+          <div class="lf"><label>Day A key lift (weight × reps)</label><input type="text" id="${w.lk}-a" placeholder="e.g. 245lb × 3"></div>
+          <div class="lf"><label>Zone 2 (duration + feel)</label><input type="text" id="${w.lk}-z2" placeholder="e.g. 35 min, easy throughout"></div>
+          <div class="lf"><label>Agility drill quality (1–10)</label><input type="text" id="${w.lk}-ag" placeholder="e.g. 8 — faster left side"></div>
+          <div class="lf"><label>RPE average this week</label><input type="text" id="${w.lk}-rpe" placeholder="e.g. 8"></div>
+          <div class="lf"><label>Court performance feel</label><input type="text" id="${w.lk}-court" placeholder="e.g. faster first step"></div>
+        </div>
+        <div class="lnotes"><textarea id="${w.lk}-notes" placeholder="Notes — what improved, what felt off, mental game observations..."></textarea></div>
+        <div style="display:flex;align-items:center;">
+          <button class="sbtn" id="btn-${w.lk}" onclick="saveLog('${w.lk}', ${w.w}, '${w.bl}')">Save to Google Sheets</button>
+          <span class="smsg" id="sm-${w.lk}"></span>
+        </div>
+      </div>`;
+    c.appendChild(d);
+    populateFields(w.lk);
+  });
+}
+
+function toggleLog(id, btn) {
+  const el = document.getElementById(id);
+  if (el.classList.contains('open')) { el.classList.remove('open'); btn.textContent = '+ log this week'; }
+  else { el.classList.add('open'); btn.textContent = '- close log'; }
+}
+
+async function saveLog(lk, weekNum, phase) {
+  const btn = document.getElementById('btn-' + lk);
+  const msg = document.getElementById('sm-' + lk);
+  const data = {
+    week: weekNum,
+    phase: phase,
+    b: document.getElementById(lk + '-b').value,
+    a: document.getElementById(lk + '-a').value,
+    z2: document.getElementById(lk + '-z2').value,
+    ag: document.getElementById(lk + '-ag').value,
+    rpe: document.getElementById(lk + '-rpe').value,
+    court: document.getElementById(lk + '-court').value,
+    notes: document.getElementById(lk + '-notes').value
+  };
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  msg.className = 'smsg';
+  msg.textContent = '';
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    sd[lk] = data;
+    btn.textContent = 'Save to Google Sheets';
+    btn.disabled = false;
+    msg.textContent = 'Saved to sheet';
+    msg.className = 'smsg show';
+    setTimeout(() => msg.classList.remove('show'), 3000);
+  } catch(e) {
+    btn.textContent = 'Save to Google Sheets';
+    btn.disabled = false;
+    msg.textContent = 'Save failed — check connection';
+    msg.className = 'smsg show err';
+    setTimeout(() => msg.classList.remove('show'), 4000);
+  }
+}
+
+function showPhase(ph, btn) {
+  document.querySelectorAll('.phase-blk').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.pnav').forEach(e => e.classList.remove('active'));
+  document.getElementById('phase-' + ph).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showView(v, btn) {
+  document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.ttab').forEach(e => e.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function init() {
+  ['p1','p2','p3','dl'].forEach(renderWeeks);
+  await loadFromSheets();
+  // re-populate after load in case cards were rendered before data arrived
+  weeks.forEach(w => populateFields(w.lk));
+}
+
+init();
+</script>
+</body>
+</html>
